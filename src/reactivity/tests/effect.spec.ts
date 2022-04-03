@@ -33,9 +33,9 @@ describe("effect", () => {
     expect(dummyName).toBe("bughou");
     expect(trace).toBe(2)
     origin.info.age++;
-    expect(dummy).toBe(20);
+    expect(dummy).toBe(21);
     expect(dummyName).toBe("bughou");
-    expect(trace).toBe(2)
+    expect(trace).toBe(3)
   });
   it("", () => {
     let foo = 10;

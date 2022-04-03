@@ -1,13 +1,14 @@
 import { extend } from "../shared";
 
-class ReactiveEffect {
+export class ReactiveEffect {
   effectFn: Function;
   scheduler?: Function;
   onStop?: Function;
   deps: Set<ReactiveEffect>[] = new Array();
   active = true
-  constructor(effectFn: Function) {
-    // this.scheduler = scheduler;
+  constructor(effectFn: Function, scheduler?) {
+    // scheduler的作用，如果scheduler如果为一个函数时，当副作用函数被重新调用时，就调用scheduler方法
+    this.scheduler = scheduler;
     // this.onStop = onStop;
     this.effectFn = effectFn;
   }
@@ -43,7 +44,7 @@ function cleanupEffect(effect: ReactiveEffect) {
 
 export function effect(fn: Function, options = {} as any) {
   // 对函数进行包装
-  const effect = new ReactiveEffect(fn);
+  const effect = new ReactiveEffect(fn, options.scheduler);
   extend(effect, options)
 
   // 执行函数收集依赖
@@ -58,24 +59,30 @@ export function effect(fn: Function, options = {} as any) {
 }
 
 export function track(target: object, key: any) {
-  // 要对每一个target => key => 创建一个dep类
-  let depsMap = targetMap.get(target);
-  // 初始化处理
-  if (!depsMap) {
-    depsMap = new Map();
-    // 添加到map对象中
-    targetMap.set(target, depsMap);
-  }
-  let dep = depsMap.get(key);
-  if (!dep) {
-    dep = new Set();
-    depsMap.set(key, dep);
-  }
   if (activeFn) {
+    // 要对每一个target => key => 创建一个dep类
+    let depsMap = targetMap.get(target);
+    // 初始化处理
+    if (!depsMap) {
+      depsMap = new Map();
+      // 添加到map对象中
+      targetMap.set(target, depsMap);
+    }
+    let dep = depsMap.get(key);
+    if (!dep) {
+      dep = new Set();
+      depsMap.set(key, dep);
+    }
     dep.add(activeFn);
     activeFn.deps.push(dep)
+    // trackEffects(dep)
   }
 }
+
+// export function trackEffects(dep: Set<any>) {
+//   dep.add(activeFn);
+//   activeFn?.deps.push(dep)
+// }
 
 export function trigger(target: object, key: any) {
   const depsMap = targetMap.get(target);
