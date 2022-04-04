@@ -32,6 +32,11 @@
    - proxyRefs:将被使用 ref 包裹的属性不用通过.value 获取，一般使用在 template 模板中
 2. computed 计算属性
    - 缓存
+3. runtime-core 将 VNODE 转化为真实 DOM
+   - patch:
+   - h
+   - render
+   - createApp
 
 <font face="微软雅黑" >微软雅黑字体</font>
 <font face="黑体" >黑体</font>
