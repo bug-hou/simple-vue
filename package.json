@@ -6,6 +6,7 @@
 	"module": "lib/simple-vue.esm.js",
 	"scripts": {
 		"test": "jest",
+		"watch": "rollup -c --watch",
 		"build": "rollup -c"
 	},
 	"keywords": [],

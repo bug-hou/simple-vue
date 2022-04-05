@@ -31,17 +31,9 @@
    - unRef:通过 isRef 判断是否调用.value 属性
    - proxyRefs:将被使用 ref 包裹的属性不用通过.value 获取，一般使用在 template 模板中
 2. computed 计算属性
-   - 缓存
+   - 缓存:将 effect 也添加到 trace 中，只要监听到发送改变，就让 cache 缓存失效，重新获取
 3. runtime-core 将 VNODE 转化为真实 DOM
-   - patch:
-   - h
-   - render
-   - createApp
-
-<font face="微软雅黑" >微软雅黑字体</font>
-<font face="黑体" >黑体</font>
-<font size=3 >3 号字</font>
-<font size=4 >4 号字</font>
-<font color=#FF0000 >红色</font>
-<font color=#008000 >绿色</font>
-<font color=#0000FF >蓝色</font>
+   - patch:判断为 element 还是为 component 决定是 createElement 还是递归 patch
+   - h:根据函数中的参数生成 VNODE 对象
+   - render:调用 h 函数，获取到组件对应的所有的 VNODE 对象
+   - createApp:一个函数返回一个对象

@@ -14,12 +14,16 @@ export const app = {
         }
       }, "我是p标签"),
       h("p", {}, this.message),
-      h(foo, { counter: 100 })
+      h(foo, { counter: 100, onAddFoo: this.addHandler })
     ])
   },
   setup() {
     return {
-      message: "bhgou 哈哈哈"
+      message: "bhgou 哈哈哈",
+      addHandler(name, str) {
+        console.log("我是add通过emit发射的");
+        console.log(name + str)
+      }
     }
   }
 }

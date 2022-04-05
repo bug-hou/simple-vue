@@ -1,3 +1,4 @@
+import { ShapeFlags } from "../shared/shapeFlags";
 import { createComponentInstance, setupComponent } from "./component"
 import { Container, Instance, VNode } from "./type/index.type"
 
@@ -13,10 +14,11 @@ export function render(vnode: VNode, container: Container) {
 }
 
 function patch(vnode: VNode, container: Container) {
-  if (typeof vnode.type === "string") {
+  const { shapeFlag } = vnode;
+  if (shapeFlag & ShapeFlags.ELEMENT) {
     // 处理非组件vnode
     processElement(vnode, container)
-  } else {
+  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     // 处理组件vnode({setup})等
     processComponent(vnode, container)
   }
@@ -29,17 +31,27 @@ function processElement(vnode: VNode, container: Container) {
 // 挂载元素
 function mountElement(vnode: VNode, container: Container) {
   // 结构数据
-  const { type, props, children } = vnode;
+  const { type, props, children, shapeFlag } = vnode;
   // 生成对应的元素
-  const el = document.createElement(type as string);
+  const el = (vnode.el = document.createElement(type as string));
+  // 处理对应的属性添加
   for (const key in props) {
-    el.setAttribute(key, props[key]);
+    /* 
+      要判断处理的prop是否为一个事件函数
+      onClick/onMousedown
+    */
+    const isOn = key => /^on[A-Z]/.test(key);
+    if (isOn(key)) {
+      el.addEventListener(key.slice(2).toLowerCase(), props[key]);
+    } else {
+      el.setAttribute(key, props[key]);
+    }
   }
   // 当vnode的children不为数组时
-  if (typeof children === "string") {
-    el.textContent = children ?? "";
-  } else if (Array.isArray(children)) {
-    mountChildren(children, el);
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+    el.textContent = (children as string) ?? "";
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+    mountChildren((children as VNode[]), el);
   }
   // 挂载到父组件中/根组件中
   /* 
@@ -71,11 +83,13 @@ function mountComponent(vnode: VNode, container: Container) {
 }
 
 function setupRenderEffect(instance: Instance, container: Container) {
-  const { proxy } = instance;
-  // 生成渲染树
-  const subTree = instance.render && instance.render.call(proxy)
+  const { proxy, vnode } = instance;
+  // 生成渲染树,所以render不能使用箭头函数
+  const subTree: VNode = instance.render && instance.render.call(proxy);
   // vnode -> element -> mountElement
   patch(subTree, container);
+  // 挂载DOM元素
+  vnode.el = subTree.el;
 }
 
 
