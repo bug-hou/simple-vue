@@ -1,2 +1,2 @@
-export * from "./runtime-core/index";
-export * from "./runtime-core/helpers/renderSlots"
+export * from "./runtime-core";
+export * from "./runtime-dom"

@@ -5,9 +5,9 @@ type:表示类型
 vnode:虚拟节点
 
 */
-
+export type Type = Component | string | Symbol
 export interface VNode {
-  type: Component | string
+  type: Type
   props?: any
   children?: VNode[] | string | VNode
   el?: HTMLElement | null
@@ -17,10 +17,12 @@ export interface VNode {
 
 export interface Instance {
   vnode: VNode
-  type: Component | string
+  type: Component | string | Symbol
   props?: Props
   render?: Function
   setupState?: any
+  provides?: any
+  parent: Instance | null
   proxy?: any
   slots?: any
   emit?: Function

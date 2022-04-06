@@ -11,6 +11,7 @@ export function initSlots(instance: Instance, children: VNode[] | string | VNode
     for (const key in children as object) {
       const value = children[key];
       if (typeof value === "function") {
+        // 实现作用域插槽
         slots[key] = (props) => normalizeObjectSlotValue(value(props))
       } else {
         slots[key] = normalizeObjectSlotValue(value);

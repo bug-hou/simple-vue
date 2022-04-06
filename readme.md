@@ -11,6 +11,24 @@
 2. 添加脚本命令
    - `json test:"jest"`
 
+## 目录介绍
+
+1. reactivity:响应式 api 模块开发
+   - effect:收集依赖，当数据发生改变时，重新执行
+   - reactive:主要是 reactive，readonly，isReadonly···等 api 开发
+   - ref:主要为 ref 创建
+   - computed:计算属性
+
+```json
+模块说明：
+reactive主要使用proxy对数据进行代理，返回代理的对象，在get时收集依赖，set时触发依赖，当代理的属性为对象时递归进行代理，使用flag对reactive或者readonly进行标志，使用isReadonly来判断时，判断标志即可
+
+readonly调用set函数时，就throw一个错误
+
+ref使用
+
+```
+
 ## 开发
 
 1. 开发响应式模块(reactive)

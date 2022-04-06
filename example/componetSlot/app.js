@@ -1,4 +1,4 @@
-import { h } from "../../lib/simple-vue.esm.js";
+import { h, createTextVNode, getCurrentInstance } from "../../lib/simple-vue.esm.js";
 import { foo } from "./foo.js"
 
 window.self = null;
@@ -14,9 +14,12 @@ export const app = {
         }
       }, "我是p标签"),
       h("p", {}, this.message),
-      h(foo, { counter: 100, onAddFoo: this.addHandler }, { default: h("p", {}, "我是slot"), header: ({ age }) => h("p", {}, "我的名字" + age) }),
+      h(foo, { counter: 100, onAddFoo: this.addHandler }, {
+        default: h("p", {}, "我是slot"),
+        header: ({ age }) => [h("p", {}, "我的名字" + age), createTextVNode("我是文本节点")]
+      }),
       // h(foo, { counter: 100, onAddFoo: this.addHandler }, h("p", null, "jfdlkshfweiohg")),
-      h(foo, { counter: 100, onAddFoo: this.addHandler }, [h("p", null, "我是默认插槽")])
+      // h(foo, { counter: 100, onAddFoo: this.addHandler }, [h("p", null, "我是默认插槽")])
     ])
   },
   setup() {

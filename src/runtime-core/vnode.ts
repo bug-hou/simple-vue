@@ -1,8 +1,13 @@
 import { isArray } from "../shared/index";
 import { getShapeFlages, ShapeFlags } from "../shared/shapeFlags";
-import { Component, VNode } from "./type/index.type";
+import { Type, VNode } from "./type/index.type";
 
-export function createVNode(type: Component | string, props = {}, children?): VNode {
+// 处理文档碎片
+export const Fragment = Symbol("Fragment")
+// 处理文本类型
+export const Text = Symbol("Fragment")
+
+export function createVNode(type: Type, props = {}, children?): VNode {
   const vnode = {
     type,
     props,
@@ -22,11 +27,15 @@ export function createVNode(type: Component | string, props = {}, children?): VN
   }
 
   // 组件 + children object
-  if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+  if ((vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT)) {
     if ((typeof children === "object") && (!isArray(children))) {
       vnode.shapeFlag |= ShapeFlags.SLOT_CHILDREN
     }
   }
 
   return vnode
+}
+
+export function createTextVNode(text: string) {
+  return createVNode(Text, {}, text)
 }
