@@ -1,3 +1,4 @@
+import { proxyRefs } from "../reactivity";
 import { shallowReadonly } from "../reactivity/reactive";
 import { emit } from "./componentEmit";
 import { initProps } from "./componentProps";
@@ -19,6 +20,7 @@ export function createComponentInstance(vnode: VNode, parent: Instance | null): 
     provides: parent?.provides ?? {},
     // 避免每次原型链深度访问
     parent: parent,
+    isMounted: false,
     emit: () => { }
   }
 
@@ -56,6 +58,7 @@ function setupStatefulComponent(instance: Instance) {
 
   if (typeof Component !== "string") {
     const { setup } = Component as Component
+    let setupResult: any;
     if (setup) {
       // 执行setup函数
       /* 
@@ -63,11 +66,11 @@ function setupStatefulComponent(instance: Instance) {
       */
       //  在setup执行之前赋值
       setCurrentInstance(instance);
-      const setupResult = setup.call(null, shallowReadonly(instance.props), { emit: instance.emit });
+      setupResult = setup.call(null, shallowReadonly(instance.props), { emit: instance.emit });
       // setup执行完毕后删除
       setCurrentInstance(null);
-      handleSetupResult(instance, setupResult);
     }
+    handleSetupResult(instance, setupResult ?? {});
   }
 
 }
@@ -79,7 +82,7 @@ function handleSetupResult(instance: Instance, setupResult: Function | object) {
   if (typeof setupResult === "function") {
     instance.setupState = setupResult();
   } else {
-    instance.setupState = setupResult
+    instance.setupState = proxyRefs(setupResult)
   }
 
   finishComponentSetup(instance)

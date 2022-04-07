@@ -1,3 +1,2 @@
-export function add(a: number, b: number) {
-  return a + b;
-}
+export { reactive, readonly, isProxy, isReactive, isReadonly } from "./reactive";
+export { ref, isRef, proxyRefs } from "./ref";

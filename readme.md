@@ -19,7 +19,7 @@
    - ref:主要为 ref 创建
    - computed:计算属性
 
-```json
+```
 模块说明：
 reactive主要使用proxy对数据进行代理，返回代理的对象，在get时收集依赖，set时触发依赖，当代理的属性为对象时递归进行代理，使用flag对reactive或者readonly进行标志，使用isReadonly来判断时，判断标志即可
 

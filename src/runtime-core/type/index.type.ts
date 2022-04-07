@@ -25,6 +25,8 @@ export interface Instance {
   parent: Instance | null
   proxy?: any
   slots?: any
+  subTree?: VNode
+  isMounted?: boolean
   emit?: Function
 }
 

@@ -11,3 +11,5 @@ export const capitalize = (str: string) => str.slice(0, 1).toUpperCase() + str.s
 export const camelize = (str: string) => str.replace(/-(\w)/g, (_, s: string) => s.toUpperCase())
 
 export const isArray = Array.isArray
+
+export const EMPTY_OBJ = {};
