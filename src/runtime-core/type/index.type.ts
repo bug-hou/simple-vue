@@ -10,6 +10,7 @@ export interface VNode {
   type: Type
   props?: any
   children?: VNode[] | string | VNode
+  key?: string | null
   el?: HTMLElement | null
   shapeFlag: ShapeFlags
   // [key: string]: any

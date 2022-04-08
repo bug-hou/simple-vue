@@ -3,7 +3,7 @@ export interface CreateElement {
 }
 
 export interface Insert {
-  (el: HTMLElement, container: HTMLElement): void
+  (el: HTMLElement, container: HTMLElement,anchor?:HTMLElement): void
 }
 
 export interface Remove {

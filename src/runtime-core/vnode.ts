@@ -7,11 +7,12 @@ export const Fragment = Symbol("Fragment")
 // 处理文本类型
 export const Text = Symbol("Fragment")
 
-export function createVNode(type: Type, props = {}, children?): VNode {
+export function createVNode(type: Type, props: any = {}, children?): VNode {
   const vnode = {
     type,
     props,
     children,
+    key: props.key,
     shapeFlag: getShapeFlages(type),
     el: null
   }

@@ -10,8 +10,8 @@ export const app = {
       h("p", {}, "主页"),
       // h(arrayTotext),
       // h(textToText),
-      // h(arrayToArray),
-      h(textToArray)
+      h(arrayToArray),
+      // h(textToArray)
     ])
   },
 }

@@ -33,7 +33,7 @@ export function createRenderer(options: RenderOptions) {
   n1:表示新的虚拟节点，
   n2:表示旧的虚拟节点
    */
-  function patch(n1: VNode | null, n2: VNode, container: Container, parentInstance: Instance | null) {
+  function patch(n1: VNode | null, n2: VNode, container: Container, parentInstance: Instance | null, anchor?: HTMLElement) {
     const { shapeFlag, type } = n2;
     switch (type) {
       case Fragment:
@@ -45,7 +45,7 @@ export function createRenderer(options: RenderOptions) {
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
           // 处理非组件n2
-          processElement(n1, n2, container, parentInstance);
+          processElement(n1, n2, container, parentInstance, anchor);
         } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
           // 处理组件n2({setup})等
           processComponent(n1, n2, container, parentInstance);
@@ -66,10 +66,10 @@ export function createRenderer(options: RenderOptions) {
   }
 
   // 实例化元素
-  function processElement(n1: VNode | null, n2: VNode, container: Container, parentInstance: Instance | null) {
+  function processElement(n1: VNode | null, n2: VNode, container: Container, parentInstance: Instance | null, anchor?: HTMLElement) {
     if (!n1) {
       // init -> 
-      mountElement(n2, container, parentInstance)
+      mountElement(n2, container, parentInstance, anchor)
     } else {
       patchElement(n1, n2, container, parentInstance);
     }
@@ -108,10 +108,105 @@ export function createRenderer(options: RenderOptions) {
         setElementText(container, "")
         // 对新节点进行mount
         mountChildren(c2 as any, container, parentInstance);
+      } else {
+        // debugger;
+        // 新旧节点全是数组
+        /* 
+          1.先进行双端对比
+          获取到中间乱序部分
+        */
+        patchKeyedChildren(c1 as any, c2 as any, container, parentInstance)
       }
-      // if (c1 !== c2) {
-      //   setElementText(container, c2);
-      // }
+    }
+  }
+  function patchKeyedChildren(c1: VNode[], c2: VNode[], container: HTMLElement, parentInstance: Instance) {
+    let l = 0, oldR = c1.length - 1, newR = c2.length - 1;
+    // 左端先对比
+    while (l <= oldR && l <= newR) {
+      const n1 = c1[l];
+      const n2 = c2[l];
+      if (isSameVNodeType(n1, n2)) {
+        // 如果类型相同直接再次patch属性
+        patch(n1, n2, container, parentInstance)
+      } else {
+        break;
+      }
+      l++;
+    }
+    // 右端先对比
+    while (l <= oldR && l <= newR) {
+      const n1 = c1[oldR];
+      const n2 = c2[newR];
+      if (isSameVNodeType(n1, n2)) {
+        // 如果类型相同直接再次patch属性
+        patch(n1, n2, container, parentInstance)
+      } else {
+        break;
+      }
+      oldR--;
+      newR--;
+    }
+    // 新的比老的多
+    if (l > oldR) {
+      let anchor: HTMLElement | undefined;
+      if (l + 1 < c2.length && oldR + 1 < c1.length) {
+        anchor = c1[oldR + 1].el as HTMLElement
+      }
+      while (l <= newR) {
+        patch(null, c2[l], container, parentInstance, anchor);
+        l++;
+      }
+    } else if (l > newR) {
+      while (l <= oldR) {
+        remove(c1[l].el as HTMLElement)
+        l++;
+      }
+    } else {
+      // 中间对比
+      let patched: number = 0;
+      const toBePatched = newR - l + 1;
+      const keyToNewIndexMap = new Map();
+      for (let i = l; i <= newR; i++) {
+        const preNode = c2[i];
+        if (preNode.key) {
+          keyToNewIndexMap.set(preNode.key, i)
+        }
+      }
+      for (let i = l; i <= oldR; i++) {
+        const oldNode = c1[i];
+        if (patched >= toBePatched) {
+          remove(oldNode.el as HTMLElement);
+          continue;
+        }
+        let indexKey: number | undefined;
+        if (oldNode.key) {
+          if (keyToNewIndexMap.has(oldNode.key)) {
+            indexKey = keyToNewIndexMap.get(oldNode.key)
+          }
+        } else {
+          for (let j = l; j < newR; i++) {
+            if (isSameVNodeType(oldNode, c2[j])) {
+              indexKey = j;
+              break;
+            }
+          }
+        }
+        if (!indexKey) {
+          remove(oldNode.el as HTMLElement);
+        } else {
+          patch(oldNode, c2[indexKey], container, parentInstance);
+          patched++;
+        }
+      }
+    }
+
+
+    function isSameVNodeType(n1: VNode, n2: VNode): boolean {
+      if (n1.key && n2.key) {
+        return n1.key === n2.key && n1.type === n2.type
+      } else {
+        return n1.type === n2.type;
+      }
     }
   }
   // 删除元素
@@ -143,7 +238,7 @@ export function createRenderer(options: RenderOptions) {
     }
   }
   // 挂载元素
-  function mountElement(vnode: VNode, container: Container, parentInstance: Instance | null) {
+  function mountElement(vnode: VNode, container: Container, parentInstance: Instance | null, anchor?: HTMLElement) {
     // 结构数据
     const { type, props, children, shapeFlag } = vnode;
     // 生成对应的元素
@@ -168,7 +263,7 @@ export function createRenderer(options: RenderOptions) {
     */
 
     // container.appendChild(el);
-    insert(el, container)
+    insert(el, container, anchor)
   }
 
   // 挂载子组件
@@ -213,7 +308,7 @@ export function createRenderer(options: RenderOptions) {
         instance.isMounted = true;
       } else {
         console.log("update")
-        const { proxy, vnode } = instance;
+        const { proxy } = instance;
         const oldSubTree = instance.subTree ?? null;
         const newSubTree: VNode = instance.render && instance.render.call(proxy);
         patch(oldSubTree, newSubTree, container, instance);
