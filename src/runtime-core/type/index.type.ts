@@ -13,6 +13,7 @@ export interface VNode {
   key?: string | null
   el?: HTMLElement | null
   shapeFlag: ShapeFlags
+  component?: Instance | null
   // [key: string]: any
 }
 
@@ -29,6 +30,8 @@ export interface Instance {
   subTree?: VNode
   isMounted?: boolean
   emit?: Function
+  update?: Function
+  next?: VNode | null
 }
 
 export interface Component {

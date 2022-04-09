@@ -71,6 +71,7 @@ export function createRenderer(options: RenderOptions) {
       // init -> 
       mountElement(n2, container, parentInstance, anchor)
     } else {
+      // patch对比
       patchElement(n1, n2, container, parentInstance);
     }
   }
@@ -163,9 +164,21 @@ export function createRenderer(options: RenderOptions) {
       }
     } else {
       // 中间对比
+      // 进行多少次patch(节点对比)
       let patched: number = 0;
+      // 最多可以进行节点对比的次数(新节点的个数)
       const toBePatched = newR - l + 1;
+      /* 
+        if(patched > toBepatched){
+          就可以直接删除旧节点中的剩余元素
+        }
+      */
       const keyToNewIndexMap = new Map();
+      const newIndexToOldIndexMap = new Array(toBePatched).fill(0);
+      // 判断新旧节点是否出现偏移
+      let moved = false;
+      let maxNewIndexSofar = 0;
+      // 将新的vnode虚拟节点保存到map对象中
       for (let i = l; i <= newR; i++) {
         const preNode = c2[i];
         if (preNode.key) {
@@ -174,17 +187,21 @@ export function createRenderer(options: RenderOptions) {
       }
       for (let i = l; i <= oldR; i++) {
         const oldNode = c1[i];
+        // 当map中所有的值都在old节点中找到对应的值时，就可以删除old节点中其他的节点
         if (patched >= toBePatched) {
           remove(oldNode.el as HTMLElement);
           continue;
         }
         let indexKey: number | undefined;
+        // 存在key时，有key时的查找O(1)
         if (oldNode.key) {
           if (keyToNewIndexMap.has(oldNode.key)) {
+            // 在old节点中有new节点的值，可以执行patch，比较新旧节点的区别
             indexKey = keyToNewIndexMap.get(oldNode.key)
           }
         } else {
-          for (let j = l; j < newR; i++) {
+          // 不存在key时，只能通过for循环遍历
+          for (let j = l; j <= newR; i++) {
             if (isSameVNodeType(oldNode, c2[j])) {
               indexKey = j;
               break;
@@ -192,10 +209,48 @@ export function createRenderer(options: RenderOptions) {
           }
         }
         if (!indexKey) {
+          // 如果没有相同的值，删除旧节点
           remove(oldNode.el as HTMLElement);
         } else {
+          if (indexKey >= maxNewIndexSofar) {
+            maxNewIndexSofar = indexKey;
+          } else {
+            moved = true;
+          }
+          newIndexToOldIndexMap[indexKey - l] = i + 1;
           patch(oldNode, c2[indexKey], container, parentInstance);
           patched++;
+        }
+      }
+      /* 
+        获取到最长子序列
+        [A,B,C,D,F]
+        [D,A,B,C]
+        最长子序列
+        [A,B,C]
+      */
+      const increasingNewIndexSequence = moved ? getSequence(newIndexToOldIndexMap) : [];
+      let j = increasingNewIndexSequence.length - 1;
+      debugger;
+
+      /* 
+        如果从头开始遍历的话，后面的元素可能不存在在老节点中，程序就有bug，所有从后面开始遍历，确保可以插入成功
+      */
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        const nextIndex = l + i;
+        const nextVNode = c2[nextIndex];
+        const anchor = c2[nextIndex + 1].el ?? undefined;
+        if (newIndexToOldIndexMap)
+          if (newIndexToOldIndexMap[i] === 0) {
+            patch(null, nextVNode, container, parentInstance, anchor)
+          }
+        if (moved) {
+          if (j < 0 || i !== increasingNewIndexSequence[i]) {
+            console.log("要进行调换");
+            insert(nextVNode.el as HTMLElement, container, anchor)
+          } else {
+            j--;
+          }
         }
       }
     }
@@ -274,13 +329,21 @@ export function createRenderer(options: RenderOptions) {
   }
 
   function processComponent(n1: VNode | null, n2: VNode, container: Container, parentInstance: Instance | null) {
-    // 实例化组件
-    mountComponent(n2, container, parentInstance)
+    if (!n1) {
+      // 实例化组件
+      mountComponent(n2, container, parentInstance)
+    } else {
+      updateComponent(n1, n2, container, parentInstance);
+    }
+  }
+
+  function updateComponent(n1: VNode | null, n2: VNode, container: Container, parentInstance: Instance | null) {
+    n1
   }
 
   function mountComponent(vnode: VNode, container: Container, parentInstance: Instance | null) {
     // 创建一个组件实例
-    const instance = createComponentInstance(vnode, parentInstance);
+    const instance = (vnode.component = createComponentInstance(vnode, parentInstance));
     // 调用setup函数获取到setup函数return出来的数据
     // 然后作为render函数时this
     setupComponent(instance);
@@ -292,7 +355,7 @@ export function createRenderer(options: RenderOptions) {
   */
   function setupRenderEffect(instance: Instance, container: Container) {
     // 收集依赖
-    effect(() => {
+    instance.update = effect(() => {
       // 判断节点是否进行挂载，没有挂载就挂载否则进行diff
       if (!instance.isMounted) {
         console.log("init")
@@ -321,5 +384,46 @@ export function createRenderer(options: RenderOptions) {
   return {
     createApp: createAppApi(render)
   }
+}
+
+function getSequence(arr: number[]): number[] {
+  const p = arr.slice();
+  const result = [0];
+  let i, j, u, v, c;
+  const len = arr.length;
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i];
+    if (arrI !== 0) {
+      j = result[result.length - 1];
+      if (arr[j] < arrI) {
+        p[i] = j;
+        result.push(i);
+        continue;
+      }
+      u = 0;
+      v = result.length - 1;
+      while (u < v) {
+        c = (u + v) >> 1;
+        if (arr[result[c]] < arrI) {
+          u = c + 1;
+        } else {
+          v = c;
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1];
+        }
+        result[u] = i;
+      }
+    }
+  }
+  u = result.length;
+  v = result[u - 1];
+  while (u-- > 0) {
+    result[u] = v;
+    v = p[v];
+  }
+  return result;
 }
 

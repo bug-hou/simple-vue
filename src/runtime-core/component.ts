@@ -18,6 +18,7 @@ export function createComponentInstance(vnode: VNode, parent: Instance | null): 
     setupState: {},
     slots: {},
     provides: parent?.provides ?? {},
+    next: null,
     // 避免每次原型链深度访问
     parent: parent,
     isMounted: false,
