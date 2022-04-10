@@ -6,6 +6,8 @@ import { createComponentInstance, setupComponent } from "./component"
 import { createAppApi } from "./createApp";
 import { Container, Instance, VNode } from "./type/index.type"
 import { Fragment, Text } from "./vnode";
+import { shouldUpdateComponent } from "./componentUpdateUtils"
+import { queueJobs } from "./scheduler"
 
 /* 
   允许用户自定义编译函数，重新createElement,patchProp,insert
@@ -333,12 +335,22 @@ export function createRenderer(options: RenderOptions) {
       // 实例化组件
       mountComponent(n2, container, parentInstance)
     } else {
+      // 更新
       updateComponent(n1, n2, container, parentInstance);
     }
   }
 
   function updateComponent(n1: VNode | null, n2: VNode, container: Container, parentInstance: Instance | null) {
-    n1
+    if (n1?.component) {
+      // 获取到更新后的组件，并且保存到instance实例中
+      const instance = (n2.component = n1.component);
+      if (shouldUpdateComponent(n1, n2)) {
+        instance.next = n2;
+        instance.update && instance.update()
+      } else {
+        n2.el = n1.el;
+      }
+    }
   }
 
   function mountComponent(vnode: VNode, container: Container, parentInstance: Instance | null) {
@@ -354,7 +366,7 @@ export function createRenderer(options: RenderOptions) {
   只有实例才会执行这个函数，这个是创建实例一部分，所有的h中的type只要为字符串就不会执行这一步
   */
   function setupRenderEffect(instance: Instance, container: Container) {
-    // 收集依赖
+    // 给每一个组件保存自己的更新函数
     instance.update = effect(() => {
       // 判断节点是否进行挂载，没有挂载就挂载否则进行diff
       if (!instance.isMounted) {
@@ -370,19 +382,35 @@ export function createRenderer(options: RenderOptions) {
         // 改变挂载状态
         instance.isMounted = true;
       } else {
-        console.log("update")
+        console.log("update");
+        const { next, vnode } = instance;
+        if (next) {
+          next.el = vnode.el;
+          updateComponentPreRender(instance, next)
+        }
         const { proxy } = instance;
         const oldSubTree = instance.subTree ?? null;
+        // 此时只有虚拟节点不同，其他都相同
         const newSubTree: VNode = instance.render && instance.render.call(proxy);
         patch(oldSubTree, newSubTree, container, instance);
         // // 挂载DOM元素
         // vnode.el = subTree.el;
+      }
+    }, {
+      // 异步更新
+      scheduler() {
+        queueJobs(instance.update)
       }
     })
   }
   // 利用闭包返回render函数
   return {
     createApp: createAppApi(render)
+  }
+  function updateComponentPreRender(instance: Instance, nextVNode: VNode) {
+    instance.vnode = nextVNode;
+    instance.next = null;
+    instance.props = nextVNode.props;
   }
 }
 
