@@ -399,6 +399,7 @@ export function createRenderer(options: RenderOptions) {
     }, {
       // 异步更新
       scheduler() {
+        // 取消effect中的更新方法，在更新使用scheduler中的方法
         queueJobs(instance.update)
       }
     })
