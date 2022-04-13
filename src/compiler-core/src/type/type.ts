@@ -1,12 +1,14 @@
 import { NodeTypes } from "../ast"
 
 export interface Context {
-  source: string
+  source: string,
+  children?: any[]
 }
 
 export interface ElementType {
   type: NodeTypes
   tag: string
+  children?: any[]
 }
 
 export interface InterpolationType {

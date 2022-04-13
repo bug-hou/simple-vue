@@ -19,7 +19,8 @@ describe("parse", () => {
       const ast = baseParse("<div></div>");
       expect(ast.children[0]).toStrictEqual({
         type: NodeTypes.ELEMENT,
-        tag: "div"
+        tag: "div",
+        children: []
       })
     })
   })
@@ -31,5 +32,57 @@ describe("parse", () => {
         content: "some text"
       })
     })
+  })
+  test("hello word", () => {
+    const ast = baseParse("<div>hi,{{message}}</div>");
+    expect(ast.children[0]).toStrictEqual({
+      tag: "div",
+      type: NodeTypes.ELEMENT,
+      children: [
+        {
+          type: NodeTypes.TEXT,
+          content: "hi,"
+        },
+        {
+          type: NodeTypes.INTERPOLATION,
+          content: {
+            type: NodeTypes.SIMPLE_EXPRESSION,
+            content: "message"
+          }
+        }
+      ],
+    })
+  })
+
+  test("nextd element", () => {
+    const ast = baseParse("<div><p>hi</p>{{message}}</div>");
+    expect(ast.children[0]).toStrictEqual({
+      tag: "div",
+      type: NodeTypes.ELEMENT,
+      children: [
+        {
+          tag: "p",
+          type: NodeTypes.ELEMENT,
+          children: [
+            {
+              type: NodeTypes.TEXT,
+              content: "hi"
+            },
+          ]
+        },
+        {
+          type: NodeTypes.INTERPOLATION,
+          content: {
+            type: NodeTypes.SIMPLE_EXPRESSION,
+            content: "message"
+          }
+        }
+      ],
+    })
+  })
+  test("should throw error when lack end tag", () => {
+    expect(() => {
+      baseParse("<div><span></div>")
+    }).toThrow("缺少结束标签span")
   })
 })

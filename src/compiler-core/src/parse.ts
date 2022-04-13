@@ -29,24 +29,39 @@ function createParseContext(context: string): Context {
 /* 
 解析children
 */
-function parseChildren(context: Context) {
+function parseChildren(context: Context, tag?: string) {
   const nodes: any[] = [];
-  let node;
+  while (isEnd(context, tag)) {
+    let node;
+    const s = context.source;
+    if (s.startsWith("{{")) {
+      node = parseInterpolation(context);
+    } else if (s.startsWith("<")) {
+      // 检测标签:<d
+      if (/[a-z]/i.test(s[1])) {
+        node = parseElement(context, tag);
+      }
+    }
+
+    if (!node) {
+      node = parseText(context)
+    }
+    nodes.push(node)
+  }
+  return nodes;
+}
+
+function isEnd(context: Context, tag?: string) {
   const s = context.source;
-  if (s.startsWith("{{")) {
-    node = parseInterpolation(context);
-  } else if (s.startsWith("<")) {
-    // 检测标签:<d
-    if (/[a-z]/i.test(s[1])) {
-      node = parseElement(context);
+  if (tag && s.startsWith(`</`)) {
+    if (s.startsWith(`</${tag}`)) {
+      return false;
+    } else {
+      // 防止<div><span></div>,语法错误
+      throw new SyntaxError("缺少结束标签" + tag)
     }
   }
-
-  if (!node) {
-    node = parseText(context)
-  }
-  nodes.push(node)
-  return nodes;
+  return !(s.length === 0)
 }
 
 // 解析mustache函数
@@ -84,8 +99,9 @@ function advanceBy(content: string, len: number) {
   return content.slice(len)
 }
 
-function parseElement(context: Context): ElementType {
-  const element = paserTag(context, TagType.START)
+function parseElement(context: Context, tag: string): ElementType {
+  const element = paserTag(context, TagType.START);
+  element.children = parseChildren(context, tag);
   paserTag(context, TagType.END);
   return element;
 }
@@ -95,7 +111,7 @@ function paserTag(context: Context, type: any): ElementType | undefined {
   let tag: string;
   if (match) {
     tag = match[1];
-    context.source = advanceBy(context.source, match[0].length)
+    context.source = advanceBy(context.source, match[0].length + 1)
   }
   if (type === TagType.END) {
     return;
@@ -107,8 +123,18 @@ function paserTag(context: Context, type: any): ElementType | undefined {
 }
 
 function parseText(context: Context): TextType {
-  const s = parseTextDate(context.source, context.source.length);
-  context.source = advanceBy(s, s.length)
+  let endIndex = context.source.length;
+  let endTokens = ["{{", "<"];
+
+  endTokens.forEach(item => {
+    let index = context.source.indexOf(item);
+    if (index !== -1) {
+      endIndex = endIndex > index ? index : endIndex;
+    }
+  })
+
+  const s = parseTextDate(context.source, endIndex);
+  context.source = advanceBy(context.source, s.length)
   return {
     type: NodeTypes.TEXT,
     content: s
