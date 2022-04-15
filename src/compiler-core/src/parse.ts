@@ -1,7 +1,7 @@
 import { NodeTypes, TagType } from "./ast";
-import { Context, ElementType, InterpolationType, TextType } from "./type/type";
+import { AST, Context, ElementType, InterpolationType, TextType } from "./type/type";
 
-export function baseParse(content: string) {
+export function baseParse(content: string): AST {
   const context = createParseContext(content);
 
   return createRoot(parseChildren(context))
@@ -10,8 +10,9 @@ export function baseParse(content: string) {
 /* 
 解析根对象
 */
-function createRoot(children: any[]) {
+function createRoot(children: any[]): AST {
   return {
+    type: NodeTypes.ROOT,
     children
   }
 }
@@ -39,7 +40,7 @@ function parseChildren(context: Context, tag?: string) {
     } else if (s.startsWith("<")) {
       // 检测标签:<d
       if (/[a-z]/i.test(s[1])) {
-        node = parseElement(context, tag);
+        node = parseElement(context);
       }
     }
 
@@ -99,9 +100,9 @@ function advanceBy(content: string, len: number) {
   return content.slice(len)
 }
 
-function parseElement(context: Context, tag: string): ElementType {
+function parseElement(context: Context): ElementType {
   const element = paserTag(context, TagType.START);
-  element.children = parseChildren(context, tag);
+  element.children = parseChildren(context, element.tag);
   paserTag(context, TagType.END);
   return element;
 }

@@ -23,3 +23,12 @@ export interface TextType {
   type: NodeTypes
   content: string
 }
+
+export interface AST {
+  type?: NodeTypes,
+  tag?: string
+  content?: string
+  children?: AST[]
+  codegenNode?: AST,
+  helpers?: any
+}
