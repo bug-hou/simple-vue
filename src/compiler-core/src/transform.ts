@@ -1,4 +1,5 @@
 import { NodeTypes } from "./ast";
+import { TO_DISPLAY_STRING } from "./runtimeHelpers";
 import { AST } from "./type/type";
 
 export function transform(ast: AST, options?: any) {
@@ -16,12 +17,12 @@ function traverseNode(node: AST, context: any) {
   const nodeTransforms = context.nodeTransforms;
   for (let i = 0; i < nodeTransforms.length; i++) {
     const transform = nodeTransforms[i];
-    transform(node);
+    transform(node, context);
   }
 
   switch (node.type) {
     case NodeTypes.INTERPOLATION:
-      context.helper("toDisplayString")
+      context.helper(TO_DISPLAY_STRING)
       break;
     case NodeTypes.ROOT:
     case NodeTypes.ELEMENT:
@@ -51,6 +52,11 @@ function createTransformContext(ast: AST, options: any) {
   return context;
 }
 function createRootCodegen(ast: AST) {
-  ast.codegenNode = ast.children[0]
+  const child = ast.children[0];
+  if (child.type === NodeTypes.ELEMENT) {
+    ast.codegenNode = child.codegenNode;
+  } else {
+    ast.codegenNode = ast.children[0]
+  }
 }
 
