@@ -3,6 +3,7 @@ import { generate } from "../src/generate"
 import { transform } from "../src/transform";
 import { transformElement } from "../src/transforms/transformElement";
 import { transformText } from "../src/transforms/transformText";
+import { transformExpression } from "../src/transforms/transformExpression";
 
 describe("codegen", () => {
   it('string', () => {
@@ -27,7 +28,7 @@ describe("codegen", () => {
     const ast = baseParse("<div>hi,{{message}}</div>");
 
     transform(ast, {
-      nodeTransforms: [transformText, transformElement]
+      nodeTransforms: [transformElement, transformText, transformExpression],
     })
 
     const { code } = generate(ast);

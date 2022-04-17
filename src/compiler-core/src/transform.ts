@@ -13,11 +13,13 @@ export function transform(ast: AST, options?: any) {
 }
 
 function traverseNode(node: AST, context: any) {
-
   const nodeTransforms = context.nodeTransforms;
+
+  const exitFns: any = [];
   for (let i = 0; i < nodeTransforms.length; i++) {
     const transform = nodeTransforms[i];
-    transform(node, context);
+    const onExit = transform(node, context);
+    if (onExit) exitFns.push(onExit)
   }
 
   switch (node.type) {
@@ -28,7 +30,6 @@ function traverseNode(node: AST, context: any) {
     case NodeTypes.ELEMENT:
       const children = node.children;
       if (children) {
-        console.log(node.type || node)
         children.forEach(item => {
           traverseNode(item, context)
         })
@@ -36,6 +37,11 @@ function traverseNode(node: AST, context: any) {
       break;
     default:
       break;
+  }
+
+  let i = exitFns.length;
+  while (i--) {
+    exitFns[i]();
   }
 
 }
