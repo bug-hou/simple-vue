@@ -51,8 +51,46 @@ ref使用
 2. computed 计算属性
    - 缓存:将 effect 也添加到 trace 中，只要监听到发送改变，就让 cache 缓存失效，重新获取
 3. runtime-core 将 VNODE 转化为真实 DOM
+
    - patch:判断为 element 还是为 component 决定是 createElement 还是递归 patch
    - h:根据函数中的参数生成 VNODE 对象
    - render:调用 h 函数，获取到组件对应的所有的 VNODE 对象
    - createApp:一个函数返回一个对象
-   
+
+4. 实现模块
+
+   #### runtime-core
+
+   - [x] 支持组件类型
+   - [x] 支持 element 类型
+   - [x] 初始化 props
+   - [x] setup 可获取 props 和 context
+   - [x] 支持 component emit
+   - [x] 支持 proxy
+   - [x] 可以在 render 函数中获取 setup 返回的对象
+   - [x] nextTick 的实现
+   - [x] 支持 getCurrentInstance
+   - [x] 支持 provide/inject
+   - [x] 支持最基础的 slots
+   - [x] 支持 Text 类型节点
+   - [x] 支持 $el api
+
+   #### reactivity
+
+   目标是用自己的 reactivity 支持现有的 demo 运行
+
+   - [x] reactive 的实现
+   - [x] ref 的实现
+   - [x] readonly 的实现
+   - [x] computed 的实现
+   - [x] track 依赖收集
+   - [x] trigger 触发依赖
+   - [x] 支持 isReactive
+   - [x] 支持嵌套 reactive
+   - [x] 支持 toRaw
+   - [x] 支持 effect.scheduler
+   - [x] 支持 effect.stop
+   - [x] 支持 isReadonly
+   - [x] 支持 isProxy
+   - [x] 支持 shallowReadonly
+   - [x] 支持 proxyRefs
